@@ -19,6 +19,7 @@ module.exports = {
         }
     },
     datapengunjung: async (req, res) => {
+        try{
         const verified = req.verified
         if (verified.role === true) {
             console.log(verified.id)
@@ -45,6 +46,9 @@ module.exports = {
         } else {
             res.status(500).json({ message: "Invalid credentials!" })
         }
+    } catch (error) {
+        res.status(500).json({ message: "Mohon Check Device Data Wajah dan Suhu Anda", error })
+    }
     },
     kelolauser: async (req, res) => {
         const verified = req.verified
@@ -63,6 +67,33 @@ module.exports = {
         }
 
     },
+    detaildevice: async (req, res) => {
+        const verified = req.verified
+        if (verified.role === true) {
+            const id = req.params.id
+         
+            const tempip = await models.pilihdevice.findAll({
+                include: [{
+                    model: models.device,
+                },
+                {
+                    model: models.User
+                }
+                ],
+                where: {    
+                    id_user: id,
+                }
+            })
+            const device =  await models.device.findAll()
+            if (tempip && device) {
+                res.status(200).json({ message: "show data user", datas:device, data: tempip})
+            } else {
+                res.status(422).json({ message: "failed show data user" })
+            }
+        } else {
+            res.status(500).json({ message: "Invalid credentials!" })
+        } 
+    },
     detailuser: async (req, res) => {
         const verified = req.verified
         if (verified.role === true) {
@@ -72,9 +103,21 @@ module.exports = {
                     id: id,
                 }
             })
+            const tempip = await models.pilihdevice.findAll({
+                include: [{
+                    model: models.device,
+                },
+                {
+                    model: models.User
+                }
+                ],
+                where: {    
+                    id_user: id,
+                }
+            })
             const device =  await models.device.findAll()
             if (datauser && device) {
-                res.status(200).json({ message: "show data user", data: datauser, datas:device })
+                res.status(200).json({ message: "show data user", data: datauser, datas:device, data1: tempip})
             } else {
                 res.status(422).json({ message: "failed show data user" })
             }

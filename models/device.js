@@ -17,6 +17,7 @@ module.exports = (sequelize, DataTypes) => {
   device.init({
     nama: DataTypes.STRING,
     ip: DataTypes.STRING,
+    status: DataTypes.STRING,
     admin_id: DataTypes.INTEGER
   }, {
     sequelize,

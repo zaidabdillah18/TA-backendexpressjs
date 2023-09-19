@@ -21,8 +21,9 @@ module.exports = (sequelize, DataTypes) => {
     suhu: DataTypes.FLOAT,
     statusSuhu: DataTypes.STRING,
     waktu: DataTypes.DATE,
-    userId: DataTypes.INTEGER,
-    deviceId: DataTypes.INTEGER
+    statusUser: DataTypes.STRING,
+    deviceId: DataTypes.INTEGER,
+    userId: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'datapengunjung',

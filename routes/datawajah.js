@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
           path.extname(file.originalname)
       );
     },
-  });
+  }); 
   
 const upload = multer({ storage: storage });
 router.post("/kirim", checkJWTWajah, upload.single('gambar'), datawajahController.kirimdatawajah)

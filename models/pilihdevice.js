@@ -16,8 +16,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   pilihdevice.init({
     id_user: DataTypes.INTEGER,
-    id_device: DataTypes.INTEGER,
-    status: DataTypes.STRING
+    id_device: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'pilihdevice',

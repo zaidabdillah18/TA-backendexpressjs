@@ -78,6 +78,10 @@ module.exports = {
             }
             const transporter = nodemailer.createTransport({
                 service: "gmail",
+                host: "smtp.gmail.com",
+                port: 587,
+                secure: false, // true for 587, false for other ports
+                requireTLS: true,
                 auth: { 
                     user: process.env.EMAIL,
                     pass: process.env.PASSWORD

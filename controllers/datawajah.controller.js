@@ -34,10 +34,10 @@ async function kirimdatawajah(req, res) {
         const iduserDetail = await models.datawajah.findOne({ where: { userId: verified.id } })
         const updatedatawajah = await models.fotowajah.create({
             base64: req.body.base64,
-            userId: iduserDetail.id
+            userId: iduserDetail.userId
         });
         if (updatedatawajah) {
-            res.status(200).json({ message: "updated data wajah" })
+            res.status(200).json({ message: "create data wajah" })
         } else {
             res.status(422).json({ message: "failed updated data wajah" })
         }
@@ -60,17 +60,20 @@ async function lihatdatawajah(req, res) {
         //     gambar: finalimageurl,
         //     base64: new Buffer(fs.readFileSync(req.file.path)).toString("base64")
         // })
-        const iduserDetail = await models.UserDetail.findOne({ where: { userId: verified.id } })
+        const iduserDetail = await models.datawajah.findOne({ where: { userId: verified.id } })
+        console.log(iduserDetail.userId)
         const getdatawajah = await models.datawajah.findAll({
             include: [{
                 model: models.fotowajah,
+                
             }
             ], where: {
-                userId: iduserDetail.id
+                userId: iduserDetail.userId
             }
         });
+        // console.log(getdatawajah);
         if (getdatawajah) {
-            res.status(200).json({ message: "updated data wajah", data: getdatawajah })
+            res.status(200).json({ message: "show data wajah", data: getdatawajah })
         } else {
             res.status(422).json({ message: "failed updated data wajah" })
         }
@@ -120,6 +123,7 @@ async function hasilpredict(req, res) {
             })
 
             const data = datas[0]
+            console.log(data)
             const tempip = await models.pilihdevice.findAll({
                 include: [{
                     model: models.device,
@@ -150,8 +154,6 @@ async function hasilpredict(req, res) {
                 aslisuhu = 36.00
             }
             if (data.label == iduserDetails.namalengkap && data.predict >= 0.90 && tempip[0].device.ip && aslisuhu <= 36.00) {
-
-
                 // if (tempip[0].device.ip && aslisuhu <= 36.00) {
                 say.speak("Welcome, Please Enter The Room", 'Alex')
                 const device1 = await axios.get(`http://${tempip[0].device.ip}/pintu/on`, {
@@ -164,7 +166,7 @@ async function hasilpredict(req, res) {
                 }, 9000);
                 var datetime = new Date().getTime()
                 const iduserDetail = await models.UserDetail.findOne({ where: { userId: verified.id } })
-                let datapengunjung = await models.datapengunjung.create({ nama: data.label, akurasi: data.predict.toString(), picture: req.body.base64, suhu: aslisuhu, deviceId: tempip[0].device.id, statusSuhu: hasil, waktu: datetime, userId: iduserDetail.id })
+                let datapengunjung = await models.datapengunjung.create({ nama: data.label, akurasi: data.predict.toString(), picture: req.body.base64, suhu: aslisuhu, deviceId: tempip[0].device.id, statusSuhu: hasil, waktu: datetime, userId: iduserDetail.id, statusUser: "Pengunjung Terdaftar" })
                 // let newface = {
                 //     akurasi: data.predict.toString(),
                 //     nama: data.label,
@@ -214,7 +216,13 @@ async function hasilpredict(req, res) {
                 // if (datapengunjung) {
                     res.status(201).json({ status: 201, data: datapengunjung, message: 'User Boleh Masuk Ruangan' })
                 // } 
-            } else {
+            } else if(data.label == iduserDetails.namalengkap && data.predict <= 0.90){
+                var datetime = new Date().getTime()
+                const iduserDetail = await models.UserDetail.findOne({ where: { userId: verified.id } })
+                let datapengunjungs = await models.datapengunjung.create({ nama: data.label, akurasi: data.predict.toString(), picture: req.body.base64, waktu: datetime, userId: iduserDetail.id, statusUser: "Pengunjung Tidak Terdaftar" })
+                res.status(200).json({ status: 200, data: datapengunjungs, message: 'User Tidak Boleh Masuk Ruangan' })
+            } 
+            else {
                 res.status(400).json({ status: 400, message: "Mohon Maaf Anda Tidak dibolehkan Masuk Ruangan" })
                 say.speak("Do Not Enter Room Your face is not registered in the system", 'Alex')
                 const temp = await axios.get(`http://${tempip[0].device.ip}/bunyi/on`, {
@@ -322,7 +330,7 @@ async function hasilpredict1(req, res) {
                 aslisuhu = 36.00
             }
             console.log(data.label)
-            if (data.label == data.label && data.predict >= 0.80 && aslisuhu <= 36.00) {
+            if (data.label == data.label && data.predict >= 0.90 && aslisuhu <= 36.00) {
                 say.speak("Welcome, Please Enter The Room", 'Alex')
                 await axios.get(`http://${tempip[0].device.ip}/pintu/on`, {
                     method: 'GET'
@@ -331,7 +339,7 @@ async function hasilpredict1(req, res) {
                     await axios.get(`http://${tempip[0].device.ip}/pintu/off`, {
                         method: 'GET'
                     });
-                }, 50000);
+                }, 500000);
                 var datetime = new Date().getTime()
                 const iduserDetail = await models.UserDetail.findOne({ where: { userId: verified.id } })
                 let datapengunjung = await models.datapengunjung.create({ nama: data.label, akurasi: data.predict.toString(), picture: req.body.base64, suhu: aslisuhu, deviceId: tempip[0].device.id, statusSuhu: hasil, waktu: datetime, userId: iduserDetail.id })
@@ -347,33 +355,34 @@ async function hasilpredict1(req, res) {
                     res.json({ status: 400, message: 'Failed created data' })
                 }
 
-                let users = await models.User.findOne({ where: { id: verified.id } })
-                let datapengunjungs = await models.datapengunjung.findOne({ where: { nama: data.label } })
-                const mailOptions = {
-                    from: process.env.EMAIL,
-                    to: users.email,
-                    subject: "Rekap Data Pengunjung",
-                    text: `nama: ${datapengunjungs.nama}, Suhu: ${datapengunjungs.suhu}, gambar: ${datapengunjungs.picture}, statusPintu: ${datapengunjungs.statusPintu}`
-                }
-                const transporter = nodemailer.createTransport({
-                    service: "gmail",
-                    auth: {
-                        user: process.env.EMAIL,
-                        pass: process.env.PASSWORD
-                    }
-                })
-                transporter.sendMail(mailOptions, (error, info) => {
-                    if (error) {
-                        console.log("error", error);
-                        res.status(401).json({ status: 401, message: "email not send" })
-                    } else {
-                        console.log("Email sent", info.response);
-                        res.status(201).json({ status: 201, message: "Email sent Successfully" })
-                    }
-                })
+                // let users = await models.User.findOne({ where: { id: verified.id } })
+                // let datapengunjungs = await models.datapengunjung.findOne({ where: { nama: data.label } })
+                // const mailOptions = {
+                //     from: process.env.EMAIL,
+                //     to: users.email,
+                //     subject: "Rekap Data Pengunjung",
+                //     text: `nama: ${datapengunjungs.nama}, Suhu: ${datapengunjungs.suhu}, gambar: ${datapengunjungs.picture}, statusPintu: ${datapengunjungs.statusPintu}`
+                // }
+                // const transporter = nodemailer.createTransport({
+                //     service: "gmail",
+                //     auth: {
+                //         user: process.env.EMAIL,
+                //         pass: process.env.PASSWORD
+                //     }
+                // })
+                // transporter.sendMail(mailOptions, (error, info) => {
+                //     if (error) {
+                //         console.log("error", error);
+                //         res.status(401).json({ status: 401, message: "email not send" })
+                //     } else {
+                //         console.log("Email sent", info.response);
+                //         res.status(201).json({ status: 201, message: "Email sent Successfully" })
+                //     }
+                // })
 
 
-            } else {
+            } else  {
+               
                 say.speak("Do Not Enter Room Your face is not registered in the system", 'Alex')
                 await axios.get(`http://${tempip[0].device.ip}/bunyi/on`, {
                     method: 'GET'
@@ -381,7 +390,9 @@ async function hasilpredict1(req, res) {
                 await axios.get(`http://${tempip[0].device.ip}/pintu/off`, {
                     method: 'GET'
                 });
-                res.status(400).json({ status: 400, message: "Mohon Maaf Anda Tidak dibolehkan Masuk Ruangan" })
+                const iduserDetail = await models.UserDetail.findOne({ where: { userId: verified.id } })
+                let pengunjungwrong = await models.datapengunjung.create({ nama: "User tidak terdaftar sistem", akurasi: data.predict.toString(), picture: req.body.base64, suhu: aslisuhu, deviceId: tempip[0].device.id, statusSuhu: hasil, waktu: datetime, userId: iduserDetail.id })
+                res.status(400).json({ status: 200, message: "Mohon Maaf Anda Tidak dibolehkan Masuk Ruangan", data: pengunjungwrong})
 
             }
             // else{
@@ -433,6 +444,9 @@ async function rekappengunjung(req, res) {
     if (verified.role === false) {
         const iduserDetail = await models.UserDetail.findOne({ where: { userId: verified.id } })
         const tampildatawajah = await models.datapengunjung.findAll({
+            include: [{
+                model: models.device,
+               }],
             where: {
                 userId: iduserDetail.id
             }
@@ -538,7 +552,7 @@ async function updateprofile(req, res) {
 
             const iduserDetail = await models.UserDetail.findOne({ where: { userId: verified.id } })
             await models.datawajah.create({
-                userId: iduserDetail.id,
+                userId: iduserDetail.userId,
                 nama: iduserDetail.namalengkap
             })
             if (updateprofile) {
@@ -590,7 +604,7 @@ async function deletewajah(req, res) {
         });
         console.log(foto.id)
         await models.fotowajah.destroy({
-            where: { id: foto.id }
+            where: { id: id }
         })
         res.json({
             status: 200,

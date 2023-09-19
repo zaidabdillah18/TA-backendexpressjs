@@ -27,10 +27,13 @@ module.exports = {
       waktu: {
         type: Sequelize.DATE
       },
-      userId: {
-        type: Sequelize.INTEGER
+      statusUser: {
+        type: Sequelize.STRING
       },
       deviceId: {
+        type: Sequelize.INTEGER
+      },
+      userId: {
         type: Sequelize.INTEGER
       },
       createdAt: {

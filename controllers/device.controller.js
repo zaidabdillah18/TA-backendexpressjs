@@ -18,7 +18,7 @@ async function kirimdevice(req, res) {
         // console.log(nama)
         if (apikey === api_key_value) {
 
-            let datadevice = await models.device.create({ nama: req.body.nama, ip: req.body.ip })
+            let datadevice = await models.device.create({ nama: req.body.nama, ip: req.body.ip, status: req.body.status })
             if (datadevice) {
                 res.status(200).json({ message: "create data device", data: datadevice })
             } else {
@@ -30,15 +30,14 @@ async function kirimdevice(req, res) {
 
 }
 async function pilihdevice(req, res) {
-    // const verified = req.verified
-    // if (verified.role === false) {
+    const verified = req.verified
+    if (verified.role === true) {
     const id = req.params.id
     const iduserDetail = await models.UserDetail.findOne({ where: { userId: id } })
     // const temp =  await models.DataPenyandang.findByPk(verified.id_user)
     const pilihdevice = await models.pilihdevice.create({
         id_device: req.body.id_device,
         id_user: iduserDetail.id,
-        status: "On"
     })
     if (pilihdevice) {
         res.status(200).json({
@@ -50,9 +49,9 @@ async function pilihdevice(req, res) {
             message: 'failed create data',
         })
     }
-    // } else {
-    //     res.status(500).json({ message: "Invalid credentials!" })
-    // }
+    } else {
+        res.status(500).json({ message: "Invalid credentials!" })
+    }
 }
 async function lihatdevice(req, res) {
     const verified = req.verified
